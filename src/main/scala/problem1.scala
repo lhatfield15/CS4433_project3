@@ -4,16 +4,9 @@ import org.apache.spark.SparkContext
 object problem1 extends Serializable {
   def query_1(sc: SparkContext): Unit = {
 
-    val spark: SparkSession = SparkSession.builder()
-        .master("local[1]")
-        .appName("Problem 1")
-        .getOrCreate()
-
-    spark.sparkContext.setLogLevel("ERROR")
-
-    val InfectedSmall = spark.sparkContext.textFile("Dataset_Creation/INFECTED-SMALL.csv")
-    val People = spark.sparkContext.textFile("Dataset_Creation/PEOPLE.csv")
-    val InfectedLarge = spark.sparkContext.textFile("Dataset_Creation/INFECTED-LARGE.csv")
+    val InfectedSmall = sc.textFile("Dataset_Creation/INFECTED-SMALL.csv")
+    val People = sc.textFile("Dataset_Creation/PEOPLE.csv")
+    val InfectedLarge = sc.textFile("Dataset_Creation/INFECTED-LARGE.csv")
     InfectedSmall.collect().foreach(println)
     InfectedLarge.collect().foreach(println)
     People.collect().foreach(println)
@@ -36,12 +29,13 @@ object problem1 extends Serializable {
   }
 
   def query_2(sc: SparkContext): Unit = {
-    val spark: SparkSession = SparkSession.builder()
-      .master("local[1]")
-      .appName("Problem 1")
-      .getOrCreate()
 
-    spark.sparkContext.setLogLevel("ERROR")
+    val InfectedSmall = sc.textFile("Dataset_Creation/INFECTED-SMALL.csv")
+    val People = sc.textFile("Dataset_Creation/PEOPLE.csv")
+    val InfectedLarge = sc.textFile("Dataset_Creation/INFECTED-LARGE.csv")
+//    InfectedSmall.collect().foreach(println)
+//    InfectedLarge.collect().foreach(println)
+//    People.collect().foreach(println)
   }
 
 }
