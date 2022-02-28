@@ -27,6 +27,81 @@ object problem1 extends Serializable {
     false
   }
 
+  def cartesian_to_square_grid_coords(x: Float, y: Float): (Float, Float) ={
+    return ((x - x % 1000) / 1000, (y - y % 1000) / 1000)
+  }
+
+  def map_square_people(coord: String): (String, String) ={
+    //get the coords
+    val coordArr = coord.split(",")
+    val x = coordArr(1).toFloat
+    val y = coordArr(2).toFloat
+
+    //covert to square coords
+    val (square_x, square_y) = cartesian_to_square_grid_coords(x,y)
+    return (square_x.toString + "," + square_y.toString, coord + ",healthy")
+  }
+
+  def mapped_square_infected(coord: String) {
+    //get the coords
+    val coordArr = coord.split(",")
+    val x = coordArr(1).toFloat
+    val y = coordArr(2).toFloat
+
+    //set of grid cells to avoid duplicated as strings "x,y", "x1,y1"...
+    var grid_cells = scala.collection.mutable.Set[String]()
+    //look in each direction for grid cells
+    for(delta_x <- -1 to 1)
+    {
+      for(delta_y <- -1 to 1){
+        if (delta_x == 0 && delta_y == 0){
+          //do nothing
+        }
+        else{
+          // find the grid cell in this direction
+          val new_x = x + delta_x * 6
+          val new_y = y + delta_y * 6
+          // add it to the set
+          val square_x, square_y = cartesian_to_square_grid_coords(new_x, new_y)
+          grid_cells += square_x.toString + "," + square_y.toString
+        }
+      }
+    }
+
+    val grid_report = grid_cells.map(square => {
+      (square, coord + ",infected")
+    })
+    return grid_report
+  }
+
+  def reduce_grid_cells(key: String, values: Array[String]): Array[String] = {
+    //sort the infected and people
+    val infected = Array()
+    val people = Array()
+    values.foreach(value => {
+      val split_values = value.split(",")
+      val id = split_values(0)
+      val x = split_values(1)
+      val y = split_values(2)
+      val infection_state = split_values(3)
+      if(infection_state == "infected"){
+        infected :+ x + "," + y
+      }
+      else{
+        people :+ id + "," + x + "," + y
+      }
+    })
+
+    var exposed_people = scala.collection.mutable.Set[String]()
+    people.foreach(person => {
+      if(filter_infected(person, infected)) {
+        exposed_people += person
+      }
+    })
+
+    return exposed_people
+  }
+
   def query_1(sc: SparkContext): Unit = {
     //read files
     val InfectedSmall = sc.textFile("Dataset_Creation/INFECTED-SMALL.csv")
@@ -44,13 +119,25 @@ object problem1 extends Serializable {
     val People = sc.textFile("Dataset_Creation/PEOPLE.csv")
     val InfectedLarge = sc.textFile("Dataset_Creation/INFECTED-LARGE.csv")
 
+    val mapped_people = sc.parallelize[String](People.collect())
+      .map(x => {map_square_people(x)})
+    /*
+    squares are 1000x1000units, therefore we have 100 squares in a 10x10 grid
+    square names are based on coord of bottom left corner of square divided by 1000
+        0,2  |  1,2  | 2,2
+      ------------------------
+        0,1  |  1,1  | 2,1
+      ------------------------
+        0,0  |  1,0  | 2,0
+     */
+    val mapped_infected = sc.parallelize[String](InfectedLarge.collect())
+      .flatMap(x => {mapped_square_infected(x)})
 
+    val combine_all = mapped_people.union(mapped_infected)
+      .reduceByKey(reduce_grid_cells)
 
-//    val result = sc.parallelize[String](People, InfectedLarge)
-
-    //      .map(x => (x, 1))
-    //      .reduceByKey((x, y) => x + y))
-    //      .collect()
+    combine_all.foreach(println)
   }
+
 
 }
