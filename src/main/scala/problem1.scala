@@ -1,7 +1,9 @@
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import math.{ sqrt, pow }
+
+import math.{pow, sqrt}
+import scala.collection.mutable.ArrayBuffer
 
 object problem1 extends Serializable {
 
@@ -42,7 +44,7 @@ object problem1 extends Serializable {
     return (square_x.toString + "," + square_y.toString, coord + ",healthy")
   }
 
-  def mapped_square_infected(coord: String): TraversableOnce[Any] = {
+  def mapped_square_infected(coord: String): TraversableOnce[(String, String)] = {
     val coordArr = coord.split(",")
     val x = coordArr(1).toFloat
     val y = coordArr(2).toFloat
@@ -72,10 +74,10 @@ object problem1 extends Serializable {
     grid_report
   }
 
-  def reduce_grid_cells(key: String, values: Array[String]): Array[String] = {
+  def reduce_grid_cells(values: Iterable[String]): scala.collection.mutable.Set[String] = {
     //sort the infected and people
-    val infected = Array[String]()
-    val people = Array[String]()
+    val infected = ArrayBuffer[String]()
+    val people = ArrayBuffer[String]()
     values.foreach(value => {
       val split_values = value.split(",")
       val id = split_values(0)
@@ -83,21 +85,21 @@ object problem1 extends Serializable {
       val y = split_values(2)
       val infection_state = split_values(3)
       if(infection_state == "infected"){
-        infected :+ x + "," + y
+        infected += id + "," + x + "," + y
       }
       else{
-        people :+ id + "," + x + "," + y
+        val people_string = id + "," + x + "," + y
+        people += people_string
       }
     })
 
     var exposed_people = scala.collection.mutable.Set[String]()
     people.foreach(person => {
-      if(filter_infected(person, infected)) {
+      if(filter_infected(person, infected.toArray)) {
         exposed_people += person
       }
     })
-
-    return exposed_people.toArray[String]
+    exposed_people
   }
 
   def query_1(sc: SparkContext): Unit = {
@@ -113,12 +115,6 @@ object problem1 extends Serializable {
   }
 
   def query_2(sc: SparkContext): Unit = {
-    //read files
-    val People = sc.textFile("Dataset_Creation/PEOPLE.csv")
-    val InfectedLarge = sc.textFile("Dataset_Creation/INFECTED-LARGE.csv")
-
-    val mapped_people = sc.parallelize[String](People.collect())
-      .map(x => {map_square_people(x)})
     /*
     squares are 1000x1000units, therefore we have 100 squares in a 10x10 grid
     square names are based on coord of bottom left corner of square divided by 1000
@@ -128,14 +124,20 @@ object problem1 extends Serializable {
       ------------------------
         0,0  |  1,0  | 2,0
      */
+    //read files
+    val People = sc.textFile("Dataset_Creation/PEOPLE.csv")
+    val InfectedLarge = sc.textFile("Dataset_Creation/INFECTED-LARGE.csv")
+    val mapped_people = sc.parallelize[String](People.collect())
+      .map(x => {map_square_people(x)}).distinct()
+
     val mapped_infected = sc.parallelize[String](InfectedLarge.collect())
-      .flatMap(x => {mapped_square_infected(x)})
+      .flatMap(x => {mapped_square_infected(x)}).distinct()
 
+    val combine_all = mapped_people.union(mapped_infected)
+      .groupByKey()
+      .flatMap(x => reduce_grid_cells(x._2)).distinct()
 
-//    val combine_all = mapped_people.union(mapped_infected)
-//      .reduceByKey(reduce_grid_cells)
-//
-//    combine_all.foreach(println)
+    combine_all.collect().foreach(println)
   }
 
 
