@@ -42,8 +42,7 @@ object problem1 extends Serializable {
     return (square_x.toString + "," + square_y.toString, coord + ",healthy")
   }
 
-  def mapped_square_infected(coord: String) {
-    //get the coords
+  def mapped_square_infected(coord: String): TraversableOnce[Any] = {
     val coordArr = coord.split(",")
     val x = coordArr(1).toFloat
     val y = coordArr(2).toFloat
@@ -51,18 +50,17 @@ object problem1 extends Serializable {
     //set of grid cells to avoid duplicated as strings "x,y", "x1,y1"...
     var grid_cells = scala.collection.mutable.Set[String]()
     //look in each direction for grid cells
-    for(delta_x <- -1 to 1)
-    {
-      for(delta_y <- -1 to 1){
-        if (delta_x == 0 && delta_y == 0){
+    for (delta_x <- -1 to 1) {
+      for (delta_y <- -1 to 1) {
+        if (delta_x == 0 && delta_y == 0) {
           //do nothing
         }
-        else{
+        else {
           // find the grid cell in this direction
           val new_x = x + delta_x * 6
           val new_y = y + delta_y * 6
           // add it to the set
-          val square_x, square_y = cartesian_to_square_grid_coords(new_x, new_y)
+          val (square_x, square_y) = cartesian_to_square_grid_coords(new_x, new_y)
           grid_cells += square_x.toString + "," + square_y.toString
         }
       }
@@ -71,13 +69,13 @@ object problem1 extends Serializable {
     val grid_report = grid_cells.map(square => {
       (square, coord + ",infected")
     })
-    return grid_report
+    grid_report
   }
 
   def reduce_grid_cells(key: String, values: Array[String]): Array[String] = {
     //sort the infected and people
-    val infected = Array()
-    val people = Array()
+    val infected = Array[String]()
+    val people = Array[String]()
     values.foreach(value => {
       val split_values = value.split(",")
       val id = split_values(0)
@@ -99,7 +97,7 @@ object problem1 extends Serializable {
       }
     })
 
-    return exposed_people
+    return exposed_people.toArray[String]
   }
 
   def query_1(sc: SparkContext): Unit = {
@@ -133,10 +131,11 @@ object problem1 extends Serializable {
     val mapped_infected = sc.parallelize[String](InfectedLarge.collect())
       .flatMap(x => {mapped_square_infected(x)})
 
-    val combine_all = mapped_people.union(mapped_infected)
-      .reduceByKey(reduce_grid_cells)
 
-    combine_all.foreach(println)
+//    val combine_all = mapped_people.union(mapped_infected)
+//      .reduceByKey(reduce_grid_cells)
+//
+//    combine_all.foreach(println)
   }
 
 
