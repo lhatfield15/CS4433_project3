@@ -32,7 +32,7 @@ object problem1 extends Serializable {
     return ((x - x % 1000) / 1000, (y - y % 1000) / 1000)
   }
 
-  def map_square_people(coord: String): (String, String) ={
+  def mapped_square_infected(coord: String): (String, String) ={
     //get the coords
     val coordArr = coord.split(",")
     val x = coordArr(1).toFloat
@@ -40,11 +40,11 @@ object problem1 extends Serializable {
 
     //covert to square coords
     val (square_x, square_y) = cartesian_to_square_grid_coords(x,y)
-    return (square_x.toString + "," + square_y.toString, coord + ",healthy")
+    return (square_x.toString + "," + square_y.toString, coord + ",infected")
   }
 
-  def mapped_square_infected(coord: String): TraversableOnce[(String, String)] = {
-    //get coord of infected person
+  def mapped_square_people(coord: String): TraversableOnce[(String, String)] = {
+    //get coord of person
     val coordArr = coord.split(",")
     val x = coordArr(1).toFloat
     val y = coordArr(2).toFloat
@@ -70,7 +70,7 @@ object problem1 extends Serializable {
 
     //map the square coord to the info of the infected person with an infected tag
     val grid_report = grid_cells.map(square => {
-      (square, coord + ",infected")
+      (square, coord + ",healthy")
     })
     grid_report
   }
@@ -134,13 +134,13 @@ object problem1 extends Serializable {
     val People = sc.textFile("Dataset_Creation/PEOPLE.csv")
     val InfectedLarge = sc.textFile("Dataset_Creation/INFECTED-LARGE.csv")
 
-    //Take PEOPLE and return (key , value) (coordinate , id,x,y,healthy)
-    val mapped_people = sc.parallelize[String](People.collect())
-      .map(x => {map_square_people(x)}).distinct()
-
-    //Take InfectedLarge and return multiple (key , value)'s (if in 6ft) (coordinate , id,x,y,infected)
+    //Take InfectedLarge and return (key , value) (coordinate , id,x,y,healthy)
     val mapped_infected = sc.parallelize[String](InfectedLarge.collect())
-      .flatMap(x => {mapped_square_infected(x)}).distinct()
+      .map(x => {mapped_square_infected(x)}).distinct()
+
+    //Take PEOPLE and return multiple (key , value)'s (if in 6ft) (coordinate , id,x,y,infected)
+    val mapped_people = sc.parallelize[String](People.collect())
+      .flatMap(x => {mapped_square_people(x)}).distinct()
 
     //Combine all values by key (Key, Arr[Values])
     //Map -> take value array and return number of infected near if any (id,x,y , number)
