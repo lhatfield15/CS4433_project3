@@ -1,5 +1,4 @@
 import csv
-import names
 import random
 import string
 
@@ -12,8 +11,8 @@ with open('Customers.csv', 'w', newline='') as csvfile:
     for i in range(ROWS):
         writer.writerow([
             i + 1,
-            (random.choice(letters) for i in range(10,20)),# names.get_full_name(),
-            random.randint(18, 100), 
+            "".join(random.choice(letters) for i in range(10,20)),# names.get_full_name(),
+            random.randint(18, 100),
             random.randint(1, 500),  
             random.uniform(100, 10000000)
         ])

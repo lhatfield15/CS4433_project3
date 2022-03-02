@@ -1,5 +1,4 @@
 import csv
-import names
 import random
 import string
 
@@ -19,7 +18,7 @@ with open('Purchases.csv', 'w', newline='') as csvfile:
         writer.writerow([
             i + 1,
             random.randint(1, 50000), 
-            random.uniform(10, 2000),
+            round(random.uniform(10, 2000),2),
             random.randint(1, 15),
             descriptions[random.randint(0, 4)]
         ])
