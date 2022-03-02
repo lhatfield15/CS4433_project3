@@ -14,5 +14,5 @@ with open('Customers.csv', 'w', newline='') as csvfile:
             "".join(random.choice(letters) for i in range(10,20)),# names.get_full_name(),
             random.randint(18, 100),
             random.randint(1, 500),  
-            random.uniform(100, 10000000)
+            round(random.uniform(100, 10000000),2)
         ])
