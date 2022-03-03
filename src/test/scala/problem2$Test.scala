@@ -7,7 +7,7 @@ class problem2$Test extends AnyFunSuite  with Logging with BeforeAndAfterAll wit
 
   test("task_1") {
     val sc = new SparkContext(new SparkConf().setAppName("Problem 2").setMaster("local[1]"))
-//    Problem_2(sc)
+    problem2.task_1(sc)
     sc.stop()
   }
 
