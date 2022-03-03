@@ -46,7 +46,7 @@ object problem2 extends Serializable{
     FROM P WHERE TransTotal <= 600 GROUP BY TransNumItems
     """).show(10)
 
-    //2) T3  : Over T1, group the Purchases from P by customer ID for young customers between 18 and 25 years of age,
+    //4) T3  : Over T1, group the Purchases from P by customer ID for young customers between 18 and 25 years of age,
     // and for each group report the customer ID, their age,
     // and total number of items that this person has purchased and total amount spent by the customer.
     val T3 =
